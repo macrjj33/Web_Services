@@ -1,0 +1,239 @@
+﻿<!-- Home Page -->
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <title>Weather Information</title>
+    <!-- Bootstrap core CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
+    <style>
+
+        #thermometer_inner {
+            width: 95%;
+            height: 20%;
+            margin: 2.5%;
+            background: red;
+            position: absolute;
+            bottom: 0;
+        }
+
+        #thermometer_outer {
+            height: 400px;
+            position: relative;
+        }
+
+        #temp_today {
+            color: white;
+            text-align: center;
+            position: relative;
+            top: 50%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <br>
+        <h1 style="text-align:center">Weather Forecast</h1>
+        <hr>
+
+        <div>
+            <label for="lat">Latitude:</label>
+            <input type="text" name="lat" id="lat" value="37.8267" />
+            <label for="long">Longitude:</label>
+            <input type="text" name="long" id="long" value="-122.4233" />
+            <input type="submit" value="Find weather" id="submit" />
+        </div>
+        <br />
+
+        <div class="row">
+            <div class="col-4">
+                <div class="card">
+                    <div id="thermometer_outer">
+                        <div id="thermometer_inner"><p id="temp_today" class="h3"> 0 F</p></div>
+                    </div>
+                    <div class="card-body">
+                        <h5 class="text-center">Thermometer</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card" style="height:100%;">
+                    <div class="my-auto">
+                        <!-- source for images: https://www.iconfinder.com/iconsets/weather-line-19 -->
+                        <img id="image_today" class="img-fluid" src="img/clear-day.png" alt="Today's Weather Icon">
+                        <p id="icon_today" class="h3" style="text-align:center">Icon</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-4">
+                <div class="card " style="height:100%;">
+                    <div class="my-auto">
+                        <p class="h3" style="padding-left:15px;">
+                            Precipitation: <span id="precip_today">10%</span><br>
+                            Humidity: <span id="humidity_today">80%</span><br>
+                            Wind Speed: <span id="wind_today">5</span> mph<br>
+                            Summary: <span id="summary_today">Summary Info</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+        <h2 class="h1" style="text-align:center;">6 Day Forecast</h2>
+        <hr>
+        <div class="row" id="6_day_forecast">
+
+        </div>
+        <br>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.6/umd/popper.min.js" integrity="sha384-wHAiFfRlMFy6i5SRaxvfOCifBUQy1xHdJ/yoi7FRNXMRBu5WHdZYu1hA6ZOblgut" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/js/bootstrap.min.js" integrity="sha384-B0UglyR+jN6CkvvICOB2joaf5I4l3gm9GU6Hc1og6Ls7i6U/mkkaduKaBhlAXv9k" crossorigin="anonymous"></script>
+    <script>
+        $(document).ready(onload);
+
+        function onload() {
+            var lat = $("#lat").val();
+            var long = $("#long").val();
+            var url = 'https://api.darksky.net/forecast/33a4231f7d56973dd46cdf5c5adf3e78/' + lat + "," + long;
+            //var url = 'https://api.darksky.net/forecast/33a4231f7d56973dd46cdf5c5adf3e78/37.8267,-122.4233'; //Place your DarkSky API Call Here
+
+            $.ajax({ url: url, dataType: "jsonp" }).then(function (data) { set_everything(data) });
+        };
+
+        function set_everything(data) {
+
+            //set the default latitude and longitude
+            $("#lat").val(data.latitude);
+            $("#long").val(data.longitude);
+
+
+            //setting the source
+            $("#image_today").attr("src", "img/" + data.currently.icon + ".png");
+
+            //setting the internal html
+            $("#icon_today").html(data.currently.icon);
+            $("#temp_today").html(data.currently.temperature);
+
+            //setting the height
+            //will be an equation which is 15 at low temperatures, approximately linear from 20 to 80, and 100 at large temps
+            var height = 15 + 85 / (1 + Math.exp((50 - data.currently.temperature)/15));
+            $("#thermometer_inner").css("height", height + "%");
+
+            //setting the internals again
+            $("#precip_today").html(data.currently.precipProbability + "%");
+            $("#humidity_today").html(data.currently.humidity + "%");
+            $("#wind_today").html(data.currently.windSpeed + " mph");
+            $("#summary_today").html(data.daily.summary);
+
+            /*
+                Read the current weather information from the data point values [https://darksky.net/dev/docs#data-point] to
+                update the webpage for today's weather:
+                1. image_today : This should display an image for today's weather.
+                                 This will use the icon data point and pair it with an appropriate .png file (located in the img directory.)
+
+                2. icon_today : This will be set to display the current icon value.
+
+                3. temp_today : This will be updated to match the current temperature.
+
+                4. thermometer_inner : Modify the height of the thermometer to match the current temperature. This means if the
+                                       current temperature is 32 F, then the thermometer will have a height of 32%.  Please note,
+                                       this thermometer has a lower boundary of 0 and upper boundary of 100.
+
+                5. precip_today : This will be updated to match the current probability for precipitation.(make sure this is
+                                  listed as a percentage %)
+
+                6. humidity_today : This will be updated to match the current humidity percentage (make sure this is listed as a
+                                    percentage %)
+
+                7. wind_today : This will be updated to match the current wind speed.
+
+                8. summary_today: This will be updated to match the current summary for the day's weather.
+
+            */
+
+
+            //the dates
+            var week_names = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']; //This is a helper array to help convert the day of the week [0-7] to a named value [Sunday - Saturday]
+
+            //creating the cards
+            var cards = "";
+            for (var i = 1; i < 7; i++) {
+                var thatDate = data.daily.data[i];
+
+                var unix_time = thatDate.time; //Retrieve the timestamp
+                var javascript_date = new Date(unix_time * 1000).getDay();
+                var day = week_names[javascript_date];
+
+                var img_url = "img/" + thatDate.icon + ".png";
+
+                cards += "<div class=\"col-2\">";
+                cards += "<div class=\"card\">";
+                cards += "<img class=\"card-img-top\" src=\"" + img_url + "\" alt=\"" + thatDate.icon + "\">";
+                cards += "<div class=\"card-body\">";
+                cards += "<h5 class=\"card-title\">" + day;
+                cards += "<p class=\"card-text\">High: " + thatDate.temperatureHigh;
+                cards += "<br />Low: " + thatDate.temperatureLow;
+                cards += "</div>";
+                cards += "</div>";
+                cards += "</div>";
+            }
+
+            //set the internal html
+            $("#6_day_forecast").html(cards);
+
+
+
+            /* Process the daily forecast for the next 6 days */
+            /*
+                For the next 6 days you'll need to add a new card listing:
+                    1. The image icon for the day's weather
+                    2. The temperature high
+                    3. The temperature low
+
+                Each card should use the following format:
+                <div class="col-2">
+                    <div class="card">
+                        <img class="card-img-top" src="<!-- List Icon for the Day's Weather -->" alt="Card image cap">
+                        <div class="card-body">
+                            <h5 class="card-title"><!-- List Day of the Week Here --></h5>
+                            <p class="card-text">High:<!--List Temperature High --> <br>
+                                Low: <!-- List Temperature Low --></p>
+                        </div>
+                    </div>
+                </div>
+
+                <Hint/Note> - Make sure to use string concatenation to add the html code for the daily weather cards.  This should
+                be set to the innerHTML for the 6_day_forecast.
+
+            */
+
+            //Extra credit
+
+            //thermometer color
+            updateTempColor(data.currently.temperature);
+
+            $("#submit").click(onload);
+
+        };
+
+        function updateTempColor(temp) {
+            var color = "rgb(";
+            var cutoff = 75;
+            //a curve that starts at 255/2 at the cutoff and drops to 0 away from it
+            var grays = 255 / (2 + .01 * (temp - cutoff) * (temp - cutoff));
+            //a curve that starts at 255/2 at the cutoff and grows to 255 away from it
+            var cols = 255 - grays
+
+            if (temp > cutoff) {
+                color += cols + ", " + grays + ", " + grays + ")";
+            } else {
+                color += grays + ", " + grays + ", " + cols + ")";
+            }
+            $("#thermometer_inner").css("background", color);
+        }
+    </script>
+</body>
+</html>
